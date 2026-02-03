@@ -1,0 +1,78 @@
+# Build directories
+build/
+build-*/
+*build*/
+
+# CMake generated files
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+*.cmake
+!CMakeLists.txt
+
+# Qt generated files
+*.moc
+moc_*.cpp
+moc_*.h
+*_autogen/
+ui_*.h
+qrc_*.cpp
+
+# Compiled binaries
+*.o
+*.so
+*.a
+*.exe
+nfs-share-manager
+
+# IDE files
+.vscode/
+.idea/
+*.pro.user
+*.pro.user.*
+
+# Temporary files
+*~
+*.tmp
+*.temp
+.DS_Store
+Thumbs.db
+
+# Log files
+*.log
+
+# Configuration files (may contain sensitive data)
+*.conf
+*.config
+
+# Test results
+Testing/
+test_results/
+
+# Package files
+*.deb
+*.rpm
+*.tar.gz
+*.zip
+
+# Backup files
+*.bak
+*.backup
+*~
+
+# Core dumps
+core
+core.*
+
+# Qt Creator
+*.autosave
+
+# KDE/Qt specific
+.directory
+*.kdev4
+.kdev_include_paths
+
+# Documentation build
+docs/html/
+docs/latex/
