@@ -1,0 +1,22 @@
+NFS Share Manager v1.0.0
+Build Date: $(date)
+Platform: Linux x86_64
+Qt Version: 6.x
+KDE Frameworks: 6.x
+
+Features:
+- Local NFS share management
+- Remote share discovery and mounting
+- System tray integration
+- Configuration persistence
+- PolicyKit security integration
+- User-configurable discovery timeouts
+- Comprehensive notification system
+- Progress indication for operations
+
+System Requirements:
+- Linux (Ubuntu/Debian/Fedora/Arch)
+- Qt6 libraries
+- KDE Frameworks 6
+- NFS utilities
+- PolicyKit

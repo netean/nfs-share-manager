@@ -76,3 +76,8 @@ core.*
 # Documentation build
 docs/html/
 docs/latex/
+
+# Development artifacts
+*SUMMARY.md
+TASK_*.md
+*.orig

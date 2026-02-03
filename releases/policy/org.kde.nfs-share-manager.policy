@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE policyconfig PUBLIC
+ "-//freedesktop//DTD PolicyKit Policy Configuration 1.0//EN"
+ "http://www.freedesktop.org/standards/PolicyKit/1/policyconfig.dtd">
+
+<policyconfig>
+  <vendor>KDE</vendor>
+  <vendor_url>https://kde.org</vendor_url>
+  <icon_name>network-server</icon_name>
+
+  <!-- Create NFS Share -->
+  <action id="org.kde.nfs-share-manager.create-share">
+    <description>Create a new NFS share</description>
+    <description xml:lang="en">Create a new NFS share by modifying system configuration files</description>
+    <message>Authentication is required to create a new NFS share</message>
+    <message xml:lang="en">Authentication is required to create a new NFS share</message>
+    <defaults>
+      <allow_any>no</allow_any>
+      <allow_inactive>no</allow_inactive>
+      <allow_active>auth_admin_keep</allow_active>
+    </defaults>
+    <annotate key="org.freedesktop.policykit.exec.path">/usr/bin/exportfs</annotate>
+  </action>
+
+  <!-- Remove NFS Share -->
+  <action id="org.kde.nfs-share-manager.remove-share">
+    <description>Remove an existing NFS share</description>
+    <description xml:lang="en">Remove an existing NFS share by modifying system configuration files</description>
+    <message>Authentication is required to remove an NFS share</message>
+    <message xml:lang="en">Authentication is required to remove an NFS share</message>
+    <defaults>
+      <allow_any>no</allow_any>
+      <allow_inactive>no</allow_inactive>
+      <allow_active>auth_admin_keep</allow_active>
+    </defaults>
+    <annotate key="org.freedesktop.policykit.exec.path">/usr/bin/exportfs</annotate>
+  </action>
+
+  <!-- Modify NFS Share -->
+  <action id="org.kde.nfs-share-manager.modify-share">
+    <description>Modify NFS share configuration</description>
+    <description xml:lang="en">Modify the configuration of an existing NFS share</description>
+    <message>Authentication is required to modify NFS share configuration</message>
+    <message xml:lang="en">Authentication is required to modify NFS share configuration</message>
+    <defaults>
+      <allow_any>no</allow_any>
+      <allow_inactive>no</allow_inactive>
+      <allow_active>auth_admin_keep</allow_active>
+    </defaults>
+    <annotate key="org.freedesktop.policykit.exec.path">/usr/bin/exportfs</annotate>
+  </action>
+
+  <!-- Mount Remote NFS Share -->
+  <action id="org.kde.nfs-share-manager.mount-share">
+    <description>Mount a remote NFS share</description>
+    <description xml:lang="en">Mount a remote NFS share to the local filesystem</description>
+    <message>Authentication is required to mount a remote NFS share</message>
+    <message xml:lang="en">Authentication is required to mount a remote NFS share</message>
+    <defaults>
+      <allow_any>no</allow_any>
+      <allow_inactive>no</allow_inactive>
+      <allow_active>auth_admin_keep</allow_active>
+    </defaults>
+    <annotate key="org.freedesktop.policykit.exec.path">/bin/mount</annotate>
+  </action>
+
+  <!-- Unmount NFS Share -->
+  <action id="org.kde.nfs-share-manager.unmount-share">
+    <description>Unmount an NFS share</description>
+    <description xml:lang="en">Unmount an NFS share from the local filesystem</description>
+    <message>Authentication is required to unmount an NFS share</message>
+    <message xml:lang="en">Authentication is required to unmount an NFS share</message>
+    <defaults>
+      <allow_any>no</allow_any>
+      <allow_inactive>no</allow_inactive>
+      <allow_active>auth_admin_keep</allow_active>
+    </defaults>
+    <annotate key="org.freedesktop.policykit.exec.path">/bin/umount</annotate>
+  </action>
+
+  <!-- Modify /etc/fstab -->
+  <action id="org.kde.nfs-share-manager.modify-fstab">
+    <description>Modify system mount configuration</description>
+    <description xml:lang="en">Modify /etc/fstab to add persistent mount entries</description>
+    <message>Authentication is required to modify system mount configuration</message>
+    <message xml:lang="en">Authentication is required to modify system mount configuration</message>
+    <defaults>
+      <allow_any>no</allow_any>
+      <allow_inactive>no</allow_inactive>
+      <allow_active>auth_admin_keep</allow_active>
+    </defaults>
+  </action>
+
+  <!-- Restart NFS Service -->
+  <action id="org.kde.nfs-share-manager.restart-service">
+    <description>Restart the NFS service</description>
+    <description xml:lang="en">Restart the NFS server service to apply configuration changes</description>
+    <message>Authentication is required to restart the NFS service</message>
+    <message xml:lang="en">Authentication is required to restart the NFS service</message>
+    <defaults>
+      <allow_any>no</allow_any>
+      <allow_inactive>no</allow_inactive>
+      <allow_active>auth_admin_keep</allow_active>
+    </defaults>
+    <annotate key="org.freedesktop.policykit.exec.path">/bin/systemctl</annotate>
+  </action>
+
+  <!-- Modify System Files -->
+  <action id="org.kde.nfs-share-manager.modify-system-files">
+    <description>Modify system configuration files</description>
+    <description xml:lang="en">Modify system configuration files for NFS operations</description>
+    <message>Authentication is required to modify system configuration files</message>
+    <message xml:lang="en">Authentication is required to modify system configuration files</message>
+    <defaults>
+      <allow_any>no</allow_any>
+      <allow_inactive>no</allow_inactive>
+      <allow_active>auth_admin_keep</allow_active>
+    </defaults>
+  </action>
+
+</policyconfig>
