@@ -52,6 +52,9 @@ bool ShareManager::createShare(const QString &path, const ShareConfiguration &co
     // Emit signal that share was created
     emit shareCreated(newShare);
     
+    // Save to configuration for persistence
+    emit sharesPersistenceRequested();
+    
     return true;
 }
 
@@ -70,6 +73,9 @@ bool ShareManager::removeShare(const QString &path)
             // Emit signal that share was removed
             emit shareRemoved(path);
             
+            // Save to configuration for persistence
+            emit sharesPersistenceRequested();
+            
             return true;
         }
     }
@@ -82,6 +88,24 @@ QList<NFSShare> ShareManager::getActiveShares() const
 {
     qDebug() << "ShareManager::getActiveShares - returning" << m_activeShares.size() << "shares";
     return m_activeShares;
+}
+
+bool ShareManager::addExistingShare(const NFSShare &share)
+{
+    qDebug() << "ShareManager::addExistingShare - adding existing share:" << share.path();
+    
+    // Check if share already exists
+    if (isShared(share.path())) {
+        qDebug() << "Share already exists:" << share.path();
+        return false;
+    }
+    
+    // Add the share to our list
+    m_activeShares.append(share);
+    
+    qDebug() << "Existing share added successfully:" << share.path() << "Total shares:" << m_activeShares.size();
+    
+    return true;
 }
 
 bool ShareManager::updateSharePermissions(const QString &path, const PermissionSet &permissions)

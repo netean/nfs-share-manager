@@ -96,6 +96,13 @@ public:
     bool validateSharePath(const QString &path) const;
 
     /**
+     * @brief Add an existing share (for loading from configuration)
+     * @param share The NFSShare to add
+     * @return True if the share was added successfully
+     */
+    bool addExistingShare(const NFSShare &share);
+
+    /**
      * @brief Get validation errors for a path
      * @param path Directory path to validate
      * @return List of validation error messages
@@ -162,6 +169,11 @@ signals:
      * @param running True if server is now running
      */
     void nfsServerStatusChanged(bool running);
+
+    /**
+     * @brief Emitted when shares need to be persisted to configuration
+     */
+    void sharesPersistenceRequested();
 
 private slots:
     /**

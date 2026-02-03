@@ -349,7 +349,36 @@ void NFSShareManagerApp::initializeComponents()
 void NFSShareManagerApp::loadConfiguration()
 {
     qDebug() << "Loading configuration";
+    
     // Load configuration from ConfigurationManager
+    if (m_configurationManager->loadConfiguration()) {
+        qDebug() << "Configuration loaded successfully";
+        
+        // Load saved shares into ShareManager
+        QList<NFSShare> savedShares = m_configurationManager->getLocalShares();
+        for (const NFSShare &share : savedShares) {
+            // Add share to ShareManager without triggering creation signals
+            m_shareManager->addExistingShare(share);
+        }
+        
+        // Load discovery preferences
+        int discoveryInterval = m_configurationManager->getPreference("discovery/interval", 30000).toInt();
+        bool autoDiscoveryEnabled = m_configurationManager->getPreference("discovery/auto_enabled", false).toBool();
+        
+        // Apply discovery settings
+        if (autoDiscoveryEnabled) {
+            m_networkDiscovery->startDiscovery(discoveryInterval);
+            m_autoDiscoveryStatus->setText(tr("Auto Discovery: Enabled (every %1s)").arg(discoveryInterval / 1000));
+            m_autoDiscoveryToggle->setText(tr("Disable Auto Discovery"));
+        }
+        
+        // Update UI with loaded data
+        updateLocalSharesList();
+        updateMountedSharesList();
+        
+    } else {
+        qDebug() << "Failed to load configuration, using defaults";
+    }
 }
 
 void NFSShareManagerApp::connectSignals()
@@ -362,6 +391,7 @@ void NFSShareManagerApp::connectSignals()
     connect(m_shareManager, &ShareManager::shareUpdated, this, &NFSShareManagerApp::onShareUpdated);
     connect(m_shareManager, &ShareManager::shareError, this, &NFSShareManagerApp::onShareError);
     connect(m_shareManager, &ShareManager::sharesRefreshed, this, &NFSShareManagerApp::onSharesRefreshed);
+    connect(m_shareManager, &ShareManager::sharesPersistenceRequested, this, &NFSShareManagerApp::onSharesPersistenceRequested);
     
     // Connect MountManager signals
     connect(m_mountManager, &MountManager::mountStarted, this, &NFSShareManagerApp::onMountStarted);
@@ -674,7 +704,7 @@ void NFSShareManagerApp::showPreferences()
     QLabel *intervalLabel = new QLabel(tr("Discovery interval (seconds):"), discoveryGroup);
     QSpinBox *intervalSpin = new QSpinBox(discoveryGroup);
     intervalSpin->setRange(30, 3600);
-    intervalSpin->setValue(300); // 5 minutes default
+    intervalSpin->setValue(m_configurationManager->getPreference("discovery/interval", 30000).toInt() / 1000);
     discoveryLayout->addWidget(intervalLabel);
     discoveryLayout->addWidget(intervalSpin);
     
@@ -699,17 +729,28 @@ void NFSShareManagerApp::showPreferences()
     if (prefsDialog.exec() == QDialog::Accepted) {
         // Apply settings
         bool autoDiscovery = autoDiscoveryCheck->isChecked();
+        int intervalSeconds = intervalSpin->value();
+        int intervalMs = intervalSeconds * 1000;
+        
+        // Save preferences
+        m_configurationManager->setPreference("discovery/auto_enabled", autoDiscovery);
+        m_configurationManager->setPreference("discovery/interval", intervalMs);
+        m_configurationManager->saveConfiguration();
+        
         if (autoDiscovery != m_networkDiscovery->isDiscoveryActive()) {
             if (autoDiscovery) {
-                int interval = intervalSpin->value() * 1000; // Convert to milliseconds
-                m_networkDiscovery->startDiscovery(interval);
-                m_autoDiscoveryStatus->setText(tr("Auto Discovery: Enabled (every %1s)").arg(interval / 1000));
+                m_networkDiscovery->startDiscovery(intervalMs);
+                m_autoDiscoveryStatus->setText(tr("Auto Discovery: Enabled (every %1s)").arg(intervalSeconds));
                 m_autoDiscoveryToggle->setText(tr("Disable Auto Discovery"));
             } else {
                 m_networkDiscovery->stopDiscovery();
                 m_autoDiscoveryStatus->setText(tr("Auto Discovery: Disabled"));
                 m_autoDiscoveryToggle->setText(tr("Enable Auto Discovery"));
             }
+        } else if (autoDiscovery) {
+            // Update interval if auto discovery is already enabled
+            m_networkDiscovery->setScanInterval(intervalMs);
+            m_autoDiscoveryStatus->setText(tr("Auto Discovery: Enabled (every %1s)").arg(intervalSeconds));
         }
         
         // Save configuration
@@ -854,6 +895,20 @@ void NFSShareManagerApp::onNFSServerStatusChanged(bool running)
 {
     Q_UNUSED(running)
     qDebug() << "NFS server status changed (stub)";
+}
+
+void NFSShareManagerApp::onSharesPersistenceRequested()
+{
+    qDebug() << "Saving shares to configuration";
+    
+    // Get current shares from ShareManager
+    QList<NFSShare> currentShares = m_shareManager->getActiveShares();
+    
+    // Save to configuration
+    m_configurationManager->setLocalShares(currentShares);
+    m_configurationManager->saveConfiguration();
+    
+    qDebug() << "Saved" << currentShares.size() << "shares to configuration";
 }
 
 void NFSShareManagerApp::onMountStarted(const RemoteNFSShare &remoteShare, const QString &mountPoint)

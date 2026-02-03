@@ -155,6 +155,7 @@ private slots:
     void onShareError(const QString &path, const QString &error);
     void onSharesRefreshed();
     void onNFSServerStatusChanged(bool running);
+    void onSharesPersistenceRequested();
 
     // Mount management slots
     void onMountStarted(const RemoteNFSShare &remoteShare, const QString &mountPoint);
