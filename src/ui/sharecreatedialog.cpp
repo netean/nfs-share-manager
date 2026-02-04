@@ -406,6 +406,47 @@ void ShareCreateDialog::onAdvancedOptionsToggled(bool enabled)
     updateConfigurationPreview();
 }
 
+void ShareCreateDialog::onAddLocalNetworksClicked()
+{
+    if (!m_allowedHostsList) {
+        return;
+    }
+    
+    // Clear existing hosts first
+    m_allowedHostsList->clear();
+    
+    // Add local network ranges
+    QStringList networks = getLocalNetworkRanges();
+    for (const QString &network : networks) {
+        m_allowedHostsList->addItem(network);
+    }
+    
+    updateConfigurationPreview();
+    
+    QMessageBox::information(this, tr("Local Networks Added"),
+                           tr("Added %1 local network ranges.\n\n"
+                              "This allows access from all devices on your local networks.")
+                           .arg(networks.size()));
+}
+
+void ShareCreateDialog::onAllowAllHostsClicked()
+{
+    if (!m_allowedHostsList) {
+        return;
+    }
+    
+    // Clear existing hosts and add wildcard
+    m_allowedHostsList->clear();
+    m_allowedHostsList->addItem("*");
+    
+    updateConfigurationPreview();
+    
+    QMessageBox::warning(this, tr("Allow All Hosts"),
+                        tr("Added wildcard (*) to allow access from any host.\n\n"
+                           "Warning: This is less secure as it allows access from anywhere on the internet "
+                           "if your firewall permits it. Consider using local network ranges instead."));
+}
+
 void ShareCreateDialog::validateConfiguration()
 {
     m_validationErrors.clear();
@@ -568,23 +609,38 @@ void ShareCreateDialog::setupPermissionsTab()
     QGroupBox *hostsGroup = new QGroupBox(tr("Allowed Hosts"));
     QVBoxLayout *hostsLayout = new QVBoxLayout(hostsGroup);
     
-    QLabel *hostsLabel = new QLabel(tr("Specify which hosts can access this share:"));
+    QLabel *hostsLabel = new QLabel(tr("Specify which hosts can access this share (leave empty to allow local network):"));
     hostsLayout->addWidget(hostsLabel);
     
     m_allowedHostsList = new QListWidget();
     m_allowedHostsList->setMaximumHeight(100);
+    
+    // Auto-populate with local network ranges
+    populateDefaultNetworkHosts();
+    
     hostsLayout->addWidget(m_allowedHostsList);
     
     QHBoxLayout *hostsButtonLayout = new QHBoxLayout();
     m_newHostEdit = new QLineEdit();
-    m_newHostEdit->setPlaceholderText(tr("hostname, IP address, or network range"));
+    m_newHostEdit->setPlaceholderText(tr("hostname, IP address, or network range (e.g., 192.168.1.0/24)"));
     m_addHostButton = new QPushButton(tr("Add"));
     m_removeHostButton = new QPushButton(tr("Remove"));
     m_removeHostButton->setEnabled(false);
     
+    // Add quick buttons for common network configurations
+    QPushButton *addLocalNetworkButton = new QPushButton(tr("Add Local Networks"));
+    addLocalNetworkButton->setToolTip(tr("Automatically add all local network ranges"));
+    connect(addLocalNetworkButton, &QPushButton::clicked, this, &ShareCreateDialog::onAddLocalNetworksClicked);
+    
+    QPushButton *allowAllButton = new QPushButton(tr("Allow All (*)"));
+    allowAllButton->setToolTip(tr("Allow access from any host (less secure)"));
+    connect(allowAllButton, &QPushButton::clicked, this, &ShareCreateDialog::onAllowAllHostsClicked);
+    
     hostsButtonLayout->addWidget(m_newHostEdit);
     hostsButtonLayout->addWidget(m_addHostButton);
     hostsButtonLayout->addWidget(m_removeHostButton);
+    hostsButtonLayout->addWidget(addLocalNetworkButton);
+    hostsButtonLayout->addWidget(allowAllButton);
     hostsLayout->addLayout(hostsButtonLayout);
     
     mainLayout->addWidget(hostsGroup);
@@ -867,6 +923,73 @@ QString ShareCreateDialog::getExportLinePreview() const
     exportLine += "(" + permissions.toExportOptions() + ")";
     
     return exportLine;
+}
+
+void ShareCreateDialog::populateDefaultNetworkHosts()
+{
+    if (!m_allowedHostsList) {
+        return;
+    }
+    
+    // Auto-populate with local network ranges for better security and discoverability
+    QStringList networks = getLocalNetworkRanges();
+    
+    // Only add if the list is empty (don't override user choices)
+    if (m_allowedHostsList->count() == 0 && !networks.isEmpty()) {
+        for (const QString &network : networks) {
+            m_allowedHostsList->addItem(network);
+        }
+    }
+}
+
+QStringList ShareCreateDialog::getLocalNetworkRanges() const
+{
+    QStringList networks;
+    
+    // Get all active network interfaces
+    for (const QNetworkInterface &interface : QNetworkInterface::allInterfaces()) {
+        // Skip loopback and inactive interfaces
+        if (interface.flags() & QNetworkInterface::IsLoopBack ||
+            !(interface.flags() & QNetworkInterface::IsUp) ||
+            !(interface.flags() & QNetworkInterface::IsRunning)) {
+            continue;
+        }
+        
+        // Process each address entry
+        for (const QNetworkAddressEntry &entry : interface.addressEntries()) {
+            if (entry.ip().protocol() == QAbstractSocket::IPv4Protocol) {
+                QHostAddress ip = entry.ip();
+                int prefixLength = entry.prefixLength();
+                
+                // Skip if we don't have a valid prefix length
+                if (prefixLength <= 0 || prefixLength > 32) {
+                    continue;
+                }
+                
+                // Calculate network address
+                quint32 ipInt = ip.toIPv4Address();
+                quint32 mask = 0xFFFFFFFF << (32 - prefixLength);
+                quint32 networkInt = ipInt & mask;
+                
+                QHostAddress networkAddr(networkInt);
+                QString networkRange = networkAddr.toString() + "/" + QString::number(prefixLength);
+                
+                // Avoid duplicates and skip very large networks (less than /16)
+                if (!networks.contains(networkRange) && prefixLength >= 16) {
+                    networks.append(networkRange);
+                }
+            }
+        }
+    }
+    
+    // If no networks found, add common private network ranges
+    if (networks.isEmpty()) {
+        networks << "192.168.0.0/16";  // Common home networks
+        networks << "10.0.0.0/8";      // Private class A
+        networks << "172.16.0.0/12";   // Private class B
+    }
+    
+    return networks;
 }
 
 } // namespace NFSShareManager

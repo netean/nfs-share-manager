@@ -34,6 +34,7 @@ public:
     enum class ScanMode {
         Quick,      ///< Quick scan of common hosts and subnets
         Full,       ///< Full scan of all network interfaces
+        Complete,   ///< Complete scan including port scanning and extended discovery
         Targeted    ///< Scan specific hosts/ranges only
     };
 
@@ -174,6 +175,22 @@ public:
      * @return Map of scan statistics (hosts_scanned, shares_found, etc.)
      */
     QHash<QString, QVariant> getScanStatistics() const;
+
+    /**
+     * @brief Configure scan mode parameters
+     * @param mode The scan mode to configure
+     * @param maxHosts Maximum hosts to scan for this mode
+     * @param timeout Timeout per host in milliseconds
+     * @param enablePortScan Enable port scanning for this mode
+     */
+    void configureScanMode(ScanMode mode, int maxHosts, int timeout, bool enablePortScan = false);
+
+    /**
+     * @brief Get scan mode configuration
+     * @param mode The scan mode to query
+     * @return Configuration parameters for the scan mode
+     */
+    QHash<QString, QVariant> getScanModeConfig(ScanMode mode) const;
 
 signals:
     /**
@@ -353,6 +370,11 @@ private:
      */
     void updateScanStatistics(const QString &key, const QVariant &value);
 
+    /**
+     * @brief Initialize default scan mode configurations
+     */
+    void initializeDefaultScanModeConfigs();
+
     // Core components
     NFSServiceInterface *m_nfsService;     ///< NFS service interface
     NetworkMonitor *m_networkMonitor;      ///< Network change monitor
@@ -385,7 +407,11 @@ private:
     static const int DEFAULT_SCAN_INTERVAL = 30000;  ///< Default scan interval (30s)
     static const int QUICK_SCAN_TIMEOUT = 3000;      ///< Quick scan timeout (3s)
     static const int FULL_SCAN_TIMEOUT = 5000;       ///< Full scan timeout (5s)
+    static const int COMPLETE_SCAN_TIMEOUT = 8000;   ///< Complete scan timeout (8s)
     static const int MAX_CONCURRENT_SCANS = 10;      ///< Max concurrent host scans
+    
+    // Scan mode configuration storage
+    QHash<ScanMode, QHash<QString, QVariant>> m_scanModeConfigs;
 };
 
 } // namespace NFSShareManager

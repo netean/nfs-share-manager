@@ -9,7 +9,7 @@ namespace NFSShareManager {
 ShareManager::ShareManager(QObject *parent)
     : QObject(parent)
     , m_policyKitHelper(nullptr)
-    , m_nfsService(nullptr)
+    , m_nfsService(new NFSServiceInterface(this))
     , m_fileWatcher(nullptr)
     , m_refreshTimer(nullptr)
     , m_initialized(false)
@@ -17,6 +17,10 @@ ShareManager::ShareManager(QObject *parent)
     qDebug() << "ShareManager initialized";
     // Initialize the shares list
     m_activeShares.clear();
+    
+    // Connect NFSServiceInterface signals
+    connect(m_nfsService, &NFSServiceInterface::commandFinished, 
+            this, &ShareManager::onNFSCommandFinished);
 }
 
 ShareManager::~ShareManager()
@@ -44,6 +48,20 @@ bool ShareManager::createShare(const QString &path, const ShareConfiguration &co
     newShare.setCreatedAt(QDateTime::currentDateTime());
     newShare.setActive(true);
     
+    // Actually export the directory using NFS tools
+    if (m_nfsService) {
+        qDebug() << "Exporting directory to NFS system:" << path;
+        NFSCommandResult result = m_nfsService->exportDirectory(path, config);
+        
+        if (!result.success) {
+            qDebug() << "Failed to export directory:" << result.error;
+            emit shareError(path, tr("Failed to export directory: %1").arg(result.error));
+            return false;
+        }
+        
+        qDebug() << "Directory exported successfully:" << result.output;
+    }
+    
     // Add to our active shares list
     m_activeShares.append(newShare);
     
@@ -66,6 +84,21 @@ bool ShareManager::removeShare(const QString &path)
     for (int i = 0; i < m_activeShares.size(); ++i) {
         if (m_activeShares[i].path() == path) {
             NFSShare removedShare = m_activeShares[i];
+            
+            // Actually unexport the directory from NFS system
+            if (m_nfsService) {
+                qDebug() << "Unexporting directory from NFS system:" << path;
+                NFSCommandResult result = m_nfsService->unexportDirectory(path);
+                
+                if (!result.success) {
+                    qDebug() << "Failed to unexport directory:" << result.error;
+                    emit shareError(path, tr("Failed to unexport directory: %1").arg(result.error));
+                    // Continue with removal from our list even if unexport failed
+                }
+                
+                qDebug() << "Directory unexported successfully:" << result.output;
+            }
+            
             m_activeShares.removeAt(i);
             
             qDebug() << "Share removed successfully:" << path << "Remaining shares:" << m_activeShares.size();
@@ -183,8 +216,24 @@ void ShareManager::refreshShares()
 {
     qDebug() << "ShareManager::refreshShares - refreshing share list";
     
-    // In a real implementation, this would reload shares from the system
-    // For now, just emit the signal to update the UI
+    // Query the actual system exports to sync with reality
+    if (m_nfsService) {
+        NFSCommandResult result = m_nfsService->getExportedDirectories();
+        if (result.success) {
+            qDebug() << "Current system exports:" << result.output;
+            
+            // Parse the exports and update our internal list
+            QStringList systemExports = m_nfsService->parseExportfsOutput(result.output);
+            
+            // TODO: Sync our internal list with system exports
+            // For now, just log what we found
+            qDebug() << "Found" << systemExports.size() << "system exports";
+        } else {
+            qDebug() << "Failed to query system exports:" << result.error;
+        }
+    }
+    
+    // Emit the signal to update the UI
     emit sharesRefreshed();
 }
 

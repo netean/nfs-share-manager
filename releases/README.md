@@ -1,211 +1,224 @@
-# NFS Share Manager v1.0.0
+# NFS Share Manager v1.1.0
 
-A comprehensive KDE Plasma application for managing NFS shares and mounts with an intuitive graphical interface.
+A comprehensive NFS (Network File System) share management application for Linux with KDE Plasma integration.
+
+## What's New in v1.1.0
+
+### 🚀 Enhanced Network Discovery
+- **Four configurable scan modes**: Quick, Full, Complete, and Targeted scanning
+- **Configurable discovery timeout**: 30 seconds to 5 minutes (default 2 minutes)
+- **Complete Scan mode**: Exhaustive discovery with port scanning and extended subnet ranges
+- **Better progress reporting**: Accurate host counts and scan statistics
+
+### 🔧 Improved Share Creation
+- **Automatic network accessibility**: Created shares are automatically configured for local network access
+- **Enhanced permissions management**: Easy network range configuration with "Add Local Networks" button
+- **Better validation**: Improved error handling and user guidance
+
+### ⚡ Performance Enhancements
+- **Host limiting**: Prevents network overload by limiting hosts per scan mode
+- **Optimized scanning**: Better algorithms for network discovery
+- **Resource management**: Improved memory and CPU usage
+
+## Quick Start
+
+### 1. Installation
+```bash
+# Extract the package
+tar -xzf nfs-share-manager-v1.1.0-linux-x86_64.tar.gz
+cd nfs-share-manager-v1.1.0-linux-x86_64
+
+# Install dependencies automatically
+./install.sh
+
+# Run the application
+./nfs-share-manager
+```
+
+### 2. Create Your First Share
+1. Open the application
+2. Go to **Local Shares** tab
+3. Click **Create Share**
+4. Select a folder to share
+5. In **Permissions** tab, click **Add Local Networks**
+6. Click **OK** (enter admin password when prompted)
+
+### 3. Discover Network Shares
+1. Go to **Remote Shares** tab
+2. Click **Discovery Mode** and select **Full Scan**
+3. Click **Refresh** to start discovery
+4. Found shares will appear in the list
 
 ## Features
 
-- **Local NFS Share Management**: Create, edit, and remove NFS shares from local directories
-- **Remote Share Discovery**: Automatically discover NFS shares on your network
-- **Mount Management**: Mount and unmount remote NFS shares with custom options
-- **System Tray Integration**: Minimize to system tray for background operation
-- **Configuration Persistence**: All shares and settings are saved and restored on restart
-- **User-Configurable Discovery**: Set custom timeouts for network discovery (30s - 1 hour)
-- **PolicyKit Integration**: Secure privilege escalation for system operations
-- **Comprehensive Notifications**: Desktop notifications for all operations
-- **Progress Indication**: Real-time progress for long-running operations
+### Core Functionality
+✅ **Local NFS Share Management**: Create, edit, and remove NFS shares with network accessibility  
+✅ **Advanced Network Discovery**: Four scan modes with configurable parameters  
+✅ **Remote Share Mounting**: Mount and unmount remote shares with custom options  
+✅ **System Tray Integration**: Background operation with system tray icon  
+✅ **Configuration Persistence**: All settings and shares saved automatically  
+✅ **Security Integration**: PolicyKit for secure privilege escalation  
+
+### Network Discovery Modes
+- **Quick Scan**: 50 hosts max, 3s timeout - Fast scan of common addresses
+- **Full Scan**: 500 hosts max, 5s timeout - Comprehensive local network scanning
+- **Complete Scan**: 1000 hosts max, 8s timeout + port scanning - Exhaustive discovery
+- **Targeted Scan**: 100 hosts max, 5s timeout - Only user-specified hosts
+
+### User Interface
+✅ **Desktop Notifications**: Real-time status updates  
+✅ **Progress Indication**: Visual feedback for long operations  
+✅ **Configurable Discovery**: Adjustable timeouts and scan modes  
+✅ **Intuitive Design**: Clean, KDE-style interface  
 
 ## System Requirements
 
-- **Operating System**: Linux (tested on Ubuntu/Debian-based systems)
-- **Desktop Environment**: KDE Plasma (recommended) or any Qt6-compatible environment
-- **Dependencies**:
-  - Qt6 (Core, Widgets, Network)
-  - KDE Frameworks 6 (KNotifications, KConfigCore)
-  - NFS utilities (`nfs-utils` or `nfs-common`)
-  - PolicyKit (`polkit`)
+### Minimum Requirements
+- **OS**: Linux (Ubuntu 20.04+, Fedora 35+, Arch Linux, or compatible)
+- **Desktop**: KDE Plasma (recommended) or any Qt6-compatible environment
+- **Memory**: 50MB RAM minimum
+- **Storage**: 25MB disk space
+- **Network**: For NFS operations and discovery
 
-## Installation
+### Dependencies
+- **Qt6**: Core, Widgets, Network libraries
+- **KDE Frameworks 6**: KNotifications, KConfigCore
+- **NFS utilities**: `nfs-common` (Ubuntu/Debian) or `nfs-utils` (Fedora/Arch)
+- **PolicyKit**: For secure privilege escalation
+- **Avahi** (optional): Enhanced service discovery
+- **Network tools**: For network interface detection
 
-### Quick Start (Pre-compiled Binary)
+## Installation Options
 
-1. **Install Dependencies**:
-   ```bash
-   # Ubuntu/Debian:
-   sudo apt update
-   sudo apt install qt6-base-dev libkf6notifications-dev libkf6configcore-dev nfs-common polkit-kde-agent-1
-   
-   # Fedora/RHEL:
-   sudo dnf install qt6-qtbase-devel kf6-knotifications-devel kf6-kconfigcore-devel nfs-utils polkit-kde
-   
-   # Arch Linux:
-   sudo pacman -S qt6-base kf6-knotifications kf6-kconfigcore nfs-utils polkit-kde-agent
-   ```
-
-2. **Make Binary Executable**:
-   ```bash
-   chmod +x nfs-share-manager
-   ```
-
-3. **Run the Application**:
-   ```bash
-   ./nfs-share-manager
-   ```
-
-### System Installation (Optional)
-
-To install system-wide:
-
+### Option 1: Automated Installation (Recommended)
 ```bash
-# Copy binary to system location
-sudo cp nfs-share-manager /usr/local/bin/
+./install.sh
+```
+This script automatically detects your distribution and installs all required dependencies.
 
-# Copy PolicyKit policy
-sudo cp policy/org.kde.nfs-share-manager.policy /usr/share/polkit-1/actions/
+### Option 2: Manual Installation
+Install dependencies for your distribution:
 
-# Make executable
-sudo chmod +x /usr/local/bin/nfs-share-manager
-
-# Run from anywhere
-nfs-share-manager
+**Ubuntu/Debian:**
+```bash
+sudo apt update
+sudo apt install qt6-base-dev libkf6notifications-dev libkf6configcore-dev nfs-common polkit-kde-agent-1 avahi-utils
 ```
 
-## Usage Guide
+**Fedora/RHEL:**
+```bash
+sudo dnf install qt6-qtbase-devel kf6-knotifications-devel kf6-kconfigcore-devel nfs-utils polkit-kde avahi-tools
+```
 
-### Getting Started
+**Arch Linux:**
+```bash
+sudo pacman -S qt6-base kf6-knotifications kf6-kconfigcore nfs-utils polkit-kde-agent avahi
+```
 
-1. **Launch the Application**: Run `./nfs-share-manager` or click the application icon
-2. **System Tray**: The application will appear in your system tray when minimized
-3. **Main Interface**: Three tabs provide access to different functionality:
-   - **Local Shares**: Manage NFS shares from your local directories
-   - **Remote Shares**: Discover and mount NFS shares from other servers
-   - **Mounted Shares**: View and manage currently mounted NFS shares
+### Option 3: System-wide Installation
+```bash
+# After installing dependencies:
+sudo cp nfs-share-manager /usr/local/bin/
+sudo cp policy/org.kde.nfs-share-manager.policy /usr/share/polkit-1/actions/
+```
 
-### Creating Local NFS Shares
+## Configuration
 
-1. Go to the **Local Shares** tab
-2. Click **Create Share**
-3. Select a local directory to share
-4. Configure share options:
-   - **Export Path**: How the share appears to clients
-   - **Permissions**: Read-only or read-write access
-   - **Client Access**: Specify which clients can access the share
-   - **Options**: Advanced NFS export options
-5. Click **OK** to create the share
+### Network Discovery Settings
+Access via **Settings** → **Preferences** → **Network Discovery**:
+- **Auto Discovery**: Enable/disable automatic scanning
+- **Discovery Interval**: How often to scan (30s - 1 hour)
+- **Discovery Timeout**: Maximum scan time (30s - 5 minutes)
+- **Default Scan Mode**: Choose default mode for auto-discovery
 
-**Note**: Creating shares requires administrator privileges and will prompt for authentication.
-
-### Discovering and Mounting Remote Shares
-
-1. Go to the **Remote Shares** tab
-2. Click **Refresh** to discover NFS shares on your network
-3. **Auto Discovery**: Toggle automatic discovery to scan periodically
-4. **Discovery Mode**: Choose between Quick, Full, or Targeted scanning
-5. Select a discovered share and click **Mount Share**
-6. Choose a local mount point and configure mount options
-7. Click **OK** to mount the share
-
-### Managing Mounted Shares
-
-1. Go to the **Mounted Shares** tab
-2. View all currently mounted NFS shares
-3. Select a share and click **Unmount Share** to disconnect it
-4. Mounted shares show connection status and mount details
-
-### Configuration and Preferences
-
-Access **Settings > Preferences** to configure:
-
-- **Auto Discovery**: Enable/disable automatic network scanning
-- **Discovery Interval**: Set how often to scan (30 seconds to 1 hour)
-- **Notifications**: Configure desktop notification preferences
-- **System Integration**: System tray and startup options
-
-### Menu Options
-
-- **File Menu**:
-  - **Export Configuration**: Save current settings to a file
-  - **Import Configuration**: Load settings from a file
-  - **Quit**: Exit the application completely
-
-- **View Menu**:
-  - **Refresh All**: Update all share lists and status
-
-- **Settings Menu**:
-  - **Preferences**: Open configuration dialog
+### Share Creation Best Practices
+1. **Use "Add Local Networks"**: Automatically configures access for your network
+2. **Avoid wildcard (*)**: Only use for trusted networks
+3. **Test accessibility**: Use discovery to verify your shares are visible
+4. **Check firewall**: Ensure NFS ports (2049, 111) are open
 
 ## Troubleshooting
 
 ### Common Issues
 
-1. **"Permission Denied" when creating shares**:
-   - Ensure PolicyKit is installed and running
-   - Check that your user has sudo privileges
-   - Verify the PolicyKit policy file is installed
+**Application won't start:**
+- Install Qt6 and KDE Frameworks 6 dependencies
+- Check that all required libraries are available
 
-2. **No shares discovered during network scan**:
-   - Ensure NFS servers are running on target machines
-   - Check firewall settings (NFS uses ports 111, 2049, and others)
-   - Try "Targeted Scan" with specific IP addresses
+**No shares discovered:**
+- Try different scan modes (Full or Complete)
+- Check network connectivity and firewall settings
+- Verify NFS services are running on target machines
 
-3. **Mount operations fail**:
-   - Verify the remote NFS server is accessible
-   - Check that the export exists and is accessible to your IP
-   - Ensure local mount point directory exists and is empty
+**Share creation fails:**
+- Ensure NFS server is installed and running
+- Check PolicyKit is properly configured
+- Verify user has sudo privileges
 
-4. **Application won't start**:
-   - Check that all Qt6 and KDE dependencies are installed
-   - Run from terminal to see error messages
-   - Verify system has sufficient permissions
+**Shares not accessible from network:**
+- Use "Add Local Networks" in share permissions
+- Check NFS server configuration
+- Verify firewall allows NFS traffic
 
-### Log Files
+### Advanced Troubleshooting
 
-Application logs are written to:
-- **System logs**: `/var/log/syslog` or `journalctl -u nfs-share-manager`
-- **User logs**: `~/.local/share/nfs-share-manager/logs/`
+**Enable NFS server (if creating shares):**
+```bash
+sudo systemctl enable nfs-server
+sudo systemctl start nfs-server
+sudo systemctl enable rpcbind
+sudo systemctl start rpcbind
+```
 
-### Getting Help
+**Check NFS tools:**
+```bash
+exportfs -v          # List current exports
+showmount -e localhost  # Test local NFS server
+rpcinfo -p           # Check RPC services
+```
 
-1. **Check System Requirements**: Ensure all dependencies are installed
-2. **Review Error Messages**: Run from terminal to see detailed error output
-3. **Check Network Connectivity**: Verify NFS servers are reachable
-4. **Verify Permissions**: Ensure proper user privileges for NFS operations
+**Debug network discovery:**
+Run the application from terminal to see detailed discovery logs.
 
-## Security Considerations
+## Security Notes
 
-- **PolicyKit Integration**: All privileged operations use PolicyKit for secure authentication
-- **Network Security**: NFS traffic is not encrypted by default - use secure networks
-- **Access Control**: Configure share permissions carefully to prevent unauthorized access
-- **Firewall**: Ensure appropriate firewall rules for NFS traffic
-
-## Technical Details
-
-- **Built with**: Qt6, KDE Frameworks 6, CMake
-- **Architecture**: Modular design with separate business logic, UI, and system layers
-- **Configuration**: Uses Qt Settings for persistent configuration storage
-- **Testing**: Comprehensive test suite with unit, integration, and property-based tests
-
-## Version History
-
-### v1.0.0 (Current)
-- Initial release with full NFS share management functionality
-- Local share creation, editing, and removal
-- Network discovery with configurable timeouts
-- Remote share mounting and unmounting
-- System tray integration
-- Configuration persistence
-- PolicyKit security integration
-- Comprehensive notification system
-
-## License
-
-This software is distributed under the terms of the GNU General Public License v3.0.
-See the LICENSE file for full license text.
+- All privileged operations use PolicyKit for secure authentication
+- NFS traffic is not encrypted by default - use on trusted networks only
+- Share permissions should be configured carefully
+- Application follows KDE security guidelines
+- Created shares include network access controls
 
 ## Support
 
-For issues, feature requests, or contributions, please refer to the project repository
-or contact the development team.
+For issues, questions, or feature requests:
+1. Check this README and USAGE.md for guidance
+2. Ensure all dependencies are properly installed
+3. Run from terminal to see detailed error messages
+4. Check system logs for NFS-related issues
+
+## License
+
+This software is released under the Apache License 2.0. See the LICENSE file for details.
+
+## Changelog
+
+### v1.1.0 (February 4, 2026)
+- Enhanced network discovery with four configurable scan modes
+- Automatic network accessibility for created shares
+- Configurable discovery timeout (30s - 5 minutes)
+- Complete Scan mode with port scanning and extended ranges
+- Better progress reporting and performance optimization
+- Improved share creation with network range detection
+- Enhanced UI with scan mode selection in preferences
+
+### v1.0.0 (February 3, 2026)
+- Initial release with core NFS management functionality
+- Local share creation and management
+- Remote share discovery and mounting
+- System tray integration and configuration persistence
 
 ---
 
-**NFS Share Manager** - Making NFS management simple and secure.
+**Thank you for using NFS Share Manager v1.1.0!**
+
+This release significantly enhances network discovery capabilities and makes share creation more user-friendly with automatic network accessibility configuration.

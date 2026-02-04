@@ -73,6 +73,9 @@ NetworkDiscovery::NetworkDiscovery(QObject *parent)
     m_scanStats["total_shares_found"] = 0;
     m_scanStats["total_hosts_scanned"] = 0;
     m_scanStats["last_scan_duration"] = 0;
+    
+    // Initialize default scan mode configurations
+    initializeDefaultScanModeConfigs();
 }
 
 NetworkDiscovery::~NetworkDiscovery()
@@ -450,8 +453,12 @@ void NetworkDiscovery::scanHost(const QString &hostAddress)
     emit scanProgress(m_currentScanIndex + 1, m_currentScanHosts.size(), hostAddress);
     m_currentScanIndex++;
     
+    // Get timeout for current scan mode
+    QHash<QString, QVariant> config = getScanModeConfig(m_scanMode);
+    int timeout = config.value("timeout", QUICK_SCAN_TIMEOUT).toInt();
+    
     // First check if NFS RPC services are available
-    NFSCommandResult rpcResult = m_nfsService->queryRPCServices(hostAddress, QUICK_SCAN_TIMEOUT);
+    NFSCommandResult rpcResult = m_nfsService->queryRPCServices(hostAddress, timeout);
     onRPCInfoCompleted(hostAddress, rpcResult);
 }
 
@@ -459,18 +466,22 @@ QStringList NetworkDiscovery::getHostsToScan() const
 {
     QStringList hosts;
     
+    // Get configuration for current scan mode
+    QHash<QString, QVariant> config = getScanModeConfig(m_scanMode);
+    int maxHosts = config.value("maxHosts", 100).toInt();
+    
     switch (m_scanMode) {
     case ScanMode::Quick:
-        // Scan target hosts and common addresses
+        // Quick scan: Target hosts + common network addresses only
         hosts.append(m_targetHosts);
         hosts.append(getNetworkAddresses());
         break;
         
     case ScanMode::Full:
-        // Scan all network interfaces and subnets
+        // Full scan: All network interfaces and subnets
         hosts.append(m_targetHosts);
         hosts.append(getNetworkAddresses());
-        // Add more comprehensive subnet scanning
+        // Add comprehensive subnet scanning for all interfaces
         for (const QNetworkInterface &interface : QNetworkInterface::allInterfaces()) {
             if (interface.flags() & QNetworkInterface::IsUp &&
                 interface.flags() & QNetworkInterface::IsRunning &&
@@ -487,8 +498,35 @@ QStringList NetworkDiscovery::getHostsToScan() const
         }
         break;
         
+    case ScanMode::Complete:
+        // Complete scan: Full network scan + extended discovery
+        hosts.append(m_targetHosts);
+        hosts.append(getNetworkAddresses());
+        
+        // Add all possible network ranges
+        for (const QNetworkInterface &interface : QNetworkInterface::allInterfaces()) {
+            if (interface.flags() & QNetworkInterface::IsUp &&
+                interface.flags() & QNetworkInterface::IsRunning &&
+                !(interface.flags() & QNetworkInterface::IsLoopBack)) {
+                
+                for (const QNetworkAddressEntry &entry : interface.addressEntries()) {
+                    if (entry.ip().protocol() == QAbstractSocket::IPv4Protocol) {
+                        QString subnet = entry.ip().toString() + "/" + 
+                                       QString::number(entry.prefixLength());
+                        hosts.append(generateSubnetAddresses(subnet));
+                    }
+                }
+            }
+        }
+        
+        // Add common private network ranges for complete discovery
+        hosts.append(generateSubnetAddresses("192.168.0.0/16"));
+        hosts.append(generateSubnetAddresses("10.0.0.0/8"));
+        hosts.append(generateSubnetAddresses("172.16.0.0/12"));
+        break;
+        
     case ScanMode::Targeted:
-        // Only scan specifically configured target hosts
+        // Targeted scan: Only scan specifically configured target hosts
         hosts = m_targetHosts;
         break;
     }
@@ -496,6 +534,12 @@ QStringList NetworkDiscovery::getHostsToScan() const
     // Remove duplicates and invalid addresses
     hosts.removeDuplicates();
     hosts.removeAll("");
+    
+    // Limit to maximum hosts for the scan mode
+    if (hosts.size() > maxHosts) {
+        qDebug() << "NetworkDiscovery: Limiting scan from" << hosts.size() << "to" << maxHosts << "hosts for scan mode" << static_cast<int>(m_scanMode);
+        hosts = hosts.mid(0, maxHosts);
+    }
     
     return hosts;
 }
@@ -512,6 +556,9 @@ QStringList NetworkDiscovery::getNetworkAddresses() const
             
             for (const QNetworkAddressEntry &entry : interface.addressEntries()) {
                 if (entry.ip().protocol() == QAbstractSocket::IPv4Protocol) {
+                    // Add the local machine's IP address first (for local shares)
+                    addresses << entry.ip().toString();
+                    
                     // Generate common addresses in the same subnet
                     QString baseAddress = entry.ip().toString();
                     QStringList parts = baseAddress.split('.');
@@ -524,10 +571,28 @@ QStringList NetworkDiscovery::getNetworkAddresses() const
                         addresses << subnet + "10";   // Common server
                         addresses << subnet + "100";  // Common server
                         addresses << subnet + "254";  // Common server
+                        
+                        // For comprehensive scanning, add more addresses in the subnet
+                        if (m_scanMode == ScanMode::Full) {
+                            for (int i = 1; i <= 254; ++i) {
+                                QString addr = subnet + QString::number(i);
+                                if (!addresses.contains(addr)) {
+                                    addresses << addr;
+                                }
+                            }
+                        }
                     }
                 }
             }
         }
+    }
+    
+    // Always include localhost addresses for local shares
+    if (!addresses.contains("127.0.0.1")) {
+        addresses.prepend("127.0.0.1");
+    }
+    if (!addresses.contains("localhost")) {
+        addresses.prepend("localhost");
     }
     
     return addresses;
@@ -711,6 +776,39 @@ void NetworkDiscovery::setDiscoveryStatus(DiscoveryStatus status)
 void NetworkDiscovery::updateScanStatistics(const QString &key, const QVariant &value)
 {
     m_scanStats[key] = value;
+}
+
+void NetworkDiscovery::configureScanMode(ScanMode mode, int maxHosts, int timeout, bool enablePortScan)
+{
+    QHash<QString, QVariant> config;
+    config["maxHosts"] = maxHosts;
+    config["timeout"] = timeout;
+    config["enablePortScan"] = enablePortScan;
+    
+    m_scanModeConfigs[mode] = config;
+    
+    qDebug() << "NetworkDiscovery: Configured scan mode" << static_cast<int>(mode) 
+             << "- maxHosts:" << maxHosts << "timeout:" << timeout << "portScan:" << enablePortScan;
+}
+
+QHash<QString, QVariant> NetworkDiscovery::getScanModeConfig(ScanMode mode) const
+{
+    return m_scanModeConfigs.value(mode);
+}
+
+void NetworkDiscovery::initializeDefaultScanModeConfigs()
+{
+    // Quick scan: Fast scan of common hosts only
+    configureScanMode(ScanMode::Quick, 50, QUICK_SCAN_TIMEOUT, false);
+    
+    // Full scan: Comprehensive scan of local networks
+    configureScanMode(ScanMode::Full, 500, FULL_SCAN_TIMEOUT, false);
+    
+    // Complete scan: Exhaustive scan with port scanning
+    configureScanMode(ScanMode::Complete, 1000, COMPLETE_SCAN_TIMEOUT, true);
+    
+    // Targeted scan: Only scan specified hosts
+    configureScanMode(ScanMode::Targeted, 100, FULL_SCAN_TIMEOUT, false);
 }
 
 } // namespace NFSShareManager

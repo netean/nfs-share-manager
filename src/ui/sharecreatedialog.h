@@ -149,6 +149,16 @@ private slots:
     void onAdvancedOptionsToggled(bool enabled);
 
     /**
+     * @brief Handle add local networks button
+     */
+    void onAddLocalNetworksClicked();
+
+    /**
+     * @brief Handle allow all hosts button
+     */
+    void onAllowAllHostsClicked();
+
+    /**
      * @brief Validate current configuration
      */
     void validateConfiguration();
@@ -212,6 +222,17 @@ protected:
      * @return NFS export line string
      */
     QString getExportLinePreview() const;
+
+    /**
+     * @brief Populate default network hosts for local access
+     */
+    void populateDefaultNetworkHosts();
+
+    /**
+     * @brief Get local network ranges from system interfaces
+     * @return List of network ranges in CIDR notation
+     */
+    QStringList getLocalNetworkRanges() const;
 
     // Core components
     ShareManager *m_shareManager;

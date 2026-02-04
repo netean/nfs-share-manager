@@ -136,7 +136,11 @@ void NFSShareManagerApp::setupUI()
     
     // Initialize discovery timeout timer
     m_discoveryTimeoutTimer->setSingleShot(true);
-    m_discoveryTimeoutTimer->setInterval(40000); // 40 seconds
+    
+    // Load timeout from preferences (default 2 minutes)
+    int discoveryTimeout = m_configurationManager->getPreference("discovery/timeout", 120000).toInt();
+    m_discoveryTimeoutTimer->setInterval(discoveryTimeout);
+    
     connect(m_discoveryTimeoutTimer, &QTimer::timeout, this, &NFSShareManagerApp::onDiscoveryTimeout);
 }
 
@@ -364,8 +368,10 @@ void NFSShareManagerApp::loadConfiguration()
         // Load discovery preferences
         int discoveryInterval = m_configurationManager->getPreference("discovery/interval", 30000).toInt();
         bool autoDiscoveryEnabled = m_configurationManager->getPreference("discovery/auto_enabled", false).toBool();
+        int scanMode = m_configurationManager->getPreference("discovery/scan_mode", static_cast<int>(NetworkDiscovery::ScanMode::Quick)).toInt();
         
         // Apply discovery settings
+        m_networkDiscovery->setScanMode(static_cast<NetworkDiscovery::ScanMode>(scanMode));
         if (autoDiscoveryEnabled) {
             m_networkDiscovery->startDiscovery(discoveryInterval);
             m_autoDiscoveryStatus->setText(tr("Auto Discovery: Enabled (every %1s)").arg(discoveryInterval / 1000));
@@ -561,7 +567,7 @@ void NFSShareManagerApp::onRefreshDiscoveryClicked()
 void NFSShareManagerApp::onDiscoveryModeClicked()
 {
     QStringList modes;
-    modes << tr("Quick Scan") << tr("Full Scan") << tr("Targeted Scan");
+    modes << tr("Quick Scan") << tr("Full Scan") << tr("Complete Scan") << tr("Targeted Scan");
     
     bool ok;
     QString selectedMode = QInputDialog::getItem(this, tr("Discovery Mode"), 
@@ -572,6 +578,8 @@ void NFSShareManagerApp::onDiscoveryModeClicked()
         
         if (selectedMode == tr("Full Scan")) {
             mode = NetworkDiscovery::ScanMode::Full;
+        } else if (selectedMode == tr("Complete Scan")) {
+            mode = NetworkDiscovery::ScanMode::Complete;
         } else if (selectedMode == tr("Targeted Scan")) {
             // Show manual entry dialog
             QString hostAddress = QInputDialog::getText(this, tr("Targeted Scan"), 
@@ -708,6 +716,31 @@ void NFSShareManagerApp::showPreferences()
     discoveryLayout->addWidget(intervalLabel);
     discoveryLayout->addWidget(intervalSpin);
     
+    QLabel *timeoutLabel = new QLabel(tr("Discovery timeout (seconds):"), discoveryGroup);
+    QSpinBox *timeoutSpin = new QSpinBox(discoveryGroup);
+    timeoutSpin->setRange(30, 300);  // 30 seconds to 5 minutes
+    timeoutSpin->setValue(m_configurationManager->getPreference("discovery/timeout", 120000).toInt() / 1000);  // Default 2 minutes
+    timeoutSpin->setToolTip(tr("Maximum time to wait for network discovery to complete"));
+    discoveryLayout->addWidget(timeoutLabel);
+    discoveryLayout->addWidget(timeoutSpin);
+    
+    // Default scan mode
+    QLabel *scanModeLabel = new QLabel(tr("Default scan mode:"), discoveryGroup);
+    QComboBox *scanModeCombo = new QComboBox(discoveryGroup);
+    scanModeCombo->addItem(tr("Quick Scan"), static_cast<int>(NetworkDiscovery::ScanMode::Quick));
+    scanModeCombo->addItem(tr("Full Scan"), static_cast<int>(NetworkDiscovery::ScanMode::Full));
+    scanModeCombo->addItem(tr("Complete Scan"), static_cast<int>(NetworkDiscovery::ScanMode::Complete));
+    scanModeCombo->addItem(tr("Targeted Scan"), static_cast<int>(NetworkDiscovery::ScanMode::Targeted));
+    
+    int currentMode = m_configurationManager->getPreference("discovery/scan_mode", static_cast<int>(NetworkDiscovery::ScanMode::Quick)).toInt();
+    int modeIndex = scanModeCombo->findData(currentMode);
+    if (modeIndex >= 0) {
+        scanModeCombo->setCurrentIndex(modeIndex);
+    }
+    scanModeCombo->setToolTip(tr("Default scan mode for automatic discovery"));
+    discoveryLayout->addWidget(scanModeLabel);
+    discoveryLayout->addWidget(scanModeCombo);
+    
     layout->addWidget(discoveryGroup);
     
     // Notification settings
@@ -731,11 +764,22 @@ void NFSShareManagerApp::showPreferences()
         bool autoDiscovery = autoDiscoveryCheck->isChecked();
         int intervalSeconds = intervalSpin->value();
         int intervalMs = intervalSeconds * 1000;
+        int timeoutSeconds = timeoutSpin->value();
+        int timeoutMs = timeoutSeconds * 1000;
+        int scanMode = scanModeCombo->currentData().toInt();
         
         // Save preferences
         m_configurationManager->setPreference("discovery/auto_enabled", autoDiscovery);
         m_configurationManager->setPreference("discovery/interval", intervalMs);
+        m_configurationManager->setPreference("discovery/timeout", timeoutMs);
+        m_configurationManager->setPreference("discovery/scan_mode", scanMode);
         m_configurationManager->saveConfiguration();
+        
+        // Update discovery timeout timer
+        m_discoveryTimeoutTimer->setInterval(timeoutMs);
+        
+        // Update network discovery scan mode
+        m_networkDiscovery->setScanMode(static_cast<NetworkDiscovery::ScanMode>(scanMode));
         
         if (autoDiscovery != m_networkDiscovery->isDiscoveryActive()) {
             if (autoDiscovery) {
@@ -1016,6 +1060,9 @@ void NFSShareManagerApp::updateDiscoveryModeLabel()
         case NetworkDiscovery::ScanMode::Full:
             modeText = tr("Full Scan");
             break;
+        case NetworkDiscovery::ScanMode::Complete:
+            modeText = tr("Complete Scan");
+            break;
         case NetworkDiscovery::ScanMode::Targeted:
             modeText = tr("Targeted Scan");
             break;
@@ -1099,6 +1146,9 @@ void NFSShareManagerApp::onDiscoveryStarted(NetworkDiscovery::ScanMode mode)
             break;
         case NetworkDiscovery::ScanMode::Full:
             modeText = tr("Full Scan");
+            break;
+        case NetworkDiscovery::ScanMode::Complete:
+            modeText = tr("Complete Scan");
             break;
         case NetworkDiscovery::ScanMode::Targeted:
             modeText = tr("Targeted Scan");

@@ -10,11 +10,9 @@
 #include "../core/shareconfiguration.h"
 #include "../core/permissionset.h"
 #include "../system/policykithelper.h"
+#include "../system/nfsserviceinterface.h"
 
 namespace NFSShareManager {
-
-class NFSServiceInterface;
-struct NFSCommandResult;
 
 /**
  * @brief Share manager class for local NFS share management

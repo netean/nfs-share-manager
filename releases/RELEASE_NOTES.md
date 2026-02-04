@@ -1,4 +1,48 @@
-# NFS Share Manager v1.0.0 Release Notes
+# NFS Share Manager Release Notes
+
+## Version 1.1.0 - February 4, 2026
+
+### 🚀 Major Features
+- **Enhanced Network Discovery**: Complete overhaul of network scanning with configurable scan modes
+- **Automatic Network Access**: Created shares are now automatically configured for network accessibility
+- **Advanced Scan Modes**: Four distinct scan modes with customizable parameters
+
+### 🔧 New Features
+- **Complete Scan Mode**: Exhaustive network discovery including port scanning and extended subnet ranges
+- **Configurable Scan Parameters**: Each scan mode now has configurable timeout, max hosts, and port scanning options
+- **User-Configurable Discovery Timeout**: Discovery timeout now configurable from 30 seconds to 5 minutes (default 2 minutes)
+- **Enhanced Share Creation**: Shares automatically include local network ranges for better discoverability
+- **Improved Network Detection**: Better subnet scanning and automatic local network configuration
+
+### 📊 Scan Mode Details
+- **Quick Scan**: 50 hosts max, 3s timeout - Fast scan of common network addresses
+- **Full Scan**: 500 hosts max, 5s timeout - Comprehensive local network scanning  
+- **Complete Scan**: 1000 hosts max, 8s timeout + port scanning - Exhaustive discovery
+- **Targeted Scan**: 100 hosts max, 5s timeout - Only user-specified hosts
+
+### 🛠️ Improvements
+- **Better Progress Reporting**: More accurate host count and scan progress information
+- **Enhanced UI**: Added scan mode selection to preferences dialog
+- **Persistent Configuration**: Scan mode preferences are saved and restored
+- **Network Range Detection**: Automatic detection and inclusion of local network ranges
+- **Performance Optimization**: Host limiting based on scan mode to prevent overwhelming networks
+
+### 🐛 Bug Fixes
+- Fixed hardcoded 40-second discovery timeout
+- Fixed network discovery not reading user preferences
+- Improved share persistence and loading
+- Better error handling for network operations
+- Fixed scan mode not being applied correctly
+
+### 🔒 Security & Compatibility
+- Maintained PolicyKit integration for secure operations
+- Compatible with existing configuration files
+- Backward compatible with v1.0.0 configurations
+- Enhanced network security with proper host filtering
+
+---
+
+## Version 1.0.0 - February 3, 2026
 
 ## Release Information
 
