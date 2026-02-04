@@ -80,6 +80,11 @@ make -j$(nproc)
 ./src/nfs-share-manager
 ```
 
+
+#### Binary Files
+The binary tarball includes a bash install file that will download any additional packages you need from your own repo (via Apt, DNS or Pacman)
+
+
 ## Usage
 
 ### Creating Local NFS Shares
@@ -194,14 +199,15 @@ The only requirements are:
 - 💬 **Discussions**: [GitHub Discussions](https://github.com/yourusername/nfs-share-manager/discussions)
 - 📧 **Contact**: [your.email@example.com](mailto:your.email@example.com)
 
-## Roadmap
 
-- [ ] Support for additional NFS versions (NFSv2, NFSv4.1+)
-- [ ] Integration with other network filesystems (CIFS/SMB)
-- [ ] Enhanced security options and encryption
-- [ ] Mobile/remote management interface
-- [ ] Automated backup and sync features
+## Notes:
+Linux is still somewhat poor at local directory sharing for "everyday" users. Whilst a lot of Linux user can spend time writing config files and (in my case) looking up the commands and permissions because it's been years since I did it last and have forgotten).
+I just wanted something dead simple that I could run on my local machines to set something up easily and quickly.
+
+It's designed for my needs and to run on a local network (at home).
+It should NOT be considered production ready nor "secure" for company, corporate or production use.
+
+#### Also
+This has been largely coded by AI tooling (Kiro and Claude Sonnet 4.5)
 
 ---
-
-**NFS Share Manager** - Making NFS management simple and secure on Linux.
